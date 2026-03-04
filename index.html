@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<title>Egzamin OSP 30 pytań</title>
+<style>
+body { font-family: Arial; background:#111; color:white; margin:0; }
+.container { max-width:900px; margin:auto; padding:30px; }
+.question-box { background:#1c1c1c; padding:25px; border-radius:12px; margin-bottom:20px; }
+button { padding:12px; margin:6px 0; width:100%; border:none; border-radius:6px; cursor:pointer; font-size:15px; }
+.answer { background:#333; color:white; }
+.answer:hover { background:#555; }
+.selected { background:#007bff !important; }
+.correct { background:green !important; }
+.wrong { background:red !important; }
+.nav { display:flex; justify-content:space-between; }
+.nav button { width:48%; background:orange; color:black; }
+#summary { text-align:left; }
+</style>
+</head>
+<body>
+
+<div id="login">
+  <h2>🔒 Podaj hasło dostępu</h2>
+  <input type="password" id="pass">
+  <button onclick="checkPass()">Zaloguj</button>
+</div>
+
+<div id="app" class="container" style="display:none;">
+<h2>🚒 Egzamin OSP – 30 pytań (aktualna baza dział I II III)</h2>
+
+<div class="question-box">
+<div id="question"></div>
+<div id="answers"></div>
+</div>
+
+<div class="nav">
+<button onclick="prev()">Poprzednie</button>
+<button onclick="next()">Następne</button>
+</div>
+
+<button onclick="finish()" style="background:red; margin-top:15px;">
+Zakończ egzamin
+</button>
+
+</div>
+
+<script>
+
+// ======================= BAZA PYTAŃ =======================
+
+
+const base = [
+// pyt 1
+{q:"Kurek główny umożliwiający odcięcie dopływu gazu do budynku powinien być zainstalowany:",
+a:["na zewnątrz budynku","w kuchni i przedpokoju","w odległości mniejszej niż 3 m od urządzenia gazowego, licząc po długości przewodu"],
+c:0},
+
+// pyt 2
+{q:"Który z gazów jest lżejszy od powietrza?",
+a:["gaz ziemny","propan-butan","dwutlenek węgla"],
+c:0},
+
+//pyt3
+{q:"Przeciwpożarowy wyłącznik prądu służy do:",
+a:["odcięcia dopływu prądu do bezwzględnie wszystkich obwodów elektrycznych w budynku",
+"odcięcia dopływu prądu do wszystkich obwodów elektrycznych, z wyjątkiem obwodów zasilających instalacje i urządzenia, których funkcjonowanie jest niezbędne podczas pożaru",
+"załączenia dopływu prądu do obwodów zasilających instalacje i urządzenia, których funkcjonowanie jest niezbędne podczas pożaru"],
+c:1},
+
+//pyt4
+{q:"Instalacje gazowe w budynkach oznaczane są kolorem:",
+a:["zielonym","brązowym","żółtym"],
+c:2},
+
+//pyt5
+{q:"Jaka powinna być maksymalna odległość między dwoma hydrantami zewnętrznymi w mieście:",
+a:["80 m","100 m","150 m"],
+c:2},
+
+//pyt6
+{q:"W jakiej odległości od granicy lasów nie jest dopuszczalne wykonywanie czynności mogących wywołać niebezpieczeństwo pożaru, w szczególności: rozniecanie ognia poza miejscami wyznaczonymi do tego celu przez właściciela lub zarządcę lasu i palenie tytoniu z wyjątkiem miejsc na drogach utwardzonych i miejsc wyznaczonych do pobytu ludzi?",
+a:["do 20 m","do 50 m","do 100 m"],
+c:2},
+
+//pyt7
+{q:"Wypalanie słomy i pozostałości roślinnych na polach jest:",
+a:["dozwolone tylko przez właścicieli pola","dozwolone tylko w okresie jesiennym","zabronione"],
+c:2},
+
+//pyt8
+{q:"W gaśnicy śniegowej piktogram grupy pożarowej oznaczony literą C informuje o gaszeniu pożarów:",
+a:["cieczy palnych","ciał stałych pochodzenia organicznego","gazów palnych"],
+c:2},
+
+//pyt9
+{q:"W Polsce przyjęty jest podział na następujące grupy pożarów:",
+a:["A B C D E F","A B C D","A B C D E","A B C D F"],
+c:3},
+
+//pyt10
+{q:"Dominującym mechanizmem gaśniczym wody jest:",
+a:["izolowanie powierzchni","chłodzenie","rozrzedzanie strefy spalania","inhibicja chemiczna wolnych rodników"],
+c:1},
+
+//pyt11
+{q:"Czynnik określający jakość i przydatność środków zwilżających:",
+a:["zdolność obniżania napięcia powierzchniowego","zdolność wytwarzania piany","zdolność wytwarzania piany relatywnie trwałej","zdolność poprawienia przyczepności wody do gaszonych materiałów"],
+c:0},
+
+//pyt12
+{q:"Środki zwilżające stosuje się, aby:",
+a:["zwiększyć prędkość pompowania wody","spowodować lepsze wnikanie wody w materiały gaszone","wytworzyć pianę gaśniczą"],
+c:1},
+
+//pyt13
+{q:"Woda podawana z systemów mgłowych nadaje się do gaszenia:",
+a:["olejów tłuszczy smarów","sprasowanych bel słomy","torfu"],
+c:0},
+
+//pyt14
+{q:"Uszlachetnianie wody do celów gaśniczych polega na:",
+a:["usuwaniu zanieczyszczeń","zmianie twardości wody i usuwaniu zanieczyszczeń","zmianie napięcia powierzchniowego"],
+c:2},
+
+//pyt15
+{q:"Największy stopień odparowania wody ma:",
+a:["prąd zwarty","prąd kroplisty","prąd mgłowy"],
+c:2},
+
+//pyt16
+{q:"Piana o liczbie spienienia LS=172 zaliczana jest do piany:",
+a:["lekkiej","średniej","ciężkiej"],
+c:1},
+
+//pyt17
+{q:"Liczba spienienia Ls to:",
+a:["stosunek objętości roztworu do objętości piany",
+"stosunek objętości piany do objętości roztworu, z którego została wytworzona",
+"iloczyn objętości roztworu i objętości piany",
+"iloczyn objętości piany i objętości roztworu"],
+c:1},
+
+//pyt18
+{q:"Piana gaśnicza powstaje:",
+a:["ze zmieszania środka pianotwórczego z powietrzem",
+"ze zmieszania roztworu środka pianotwórczego z powietrzem",
+"ze zmieszania środka zagęszczającego z powietrzem",
+"ze zmieszania związku powierzchniowo czynnego z powietrzem"],
+c:1},
+
+//pyt19
+{q:"Zasadniczy mechanizm gaśniczy piany polega na:",
+a:["działaniu inhibicyjnym",
+"obniżeniu stężenia tlenu",
+"połączonym działaniu inhibicyjnym i rozcieńczającym",
+"oddzieleniu strefy spalania od powietrza"],
+c:3},
+
+//pyt20
+{q:"Piany stosowane są do gaszenia pożarów:",
+a:["grupy A B","grupy B C","grupy A D"],
+c:0},
+
+//pyt21
+{q:"Pianą gaśniczą nie można gasić:",
+a:["materiałów strzępiastych","oleju napędowego","urządzeń elektrycznych pod napięciem"],
+c:2},
+
+//pyt22
+{q:"Do wytwarzania piany mechanicznej potrzebne są:",
+a:["woda i środek pianotwórczy",
+"woda, środek pianotwórczy, powietrze, sprzęt pożarniczy",
+"sprzęt pożarniczy, woda, środek pianotwórczy"],
+c:1},
+
+//pyt23
+{q:"Symbol AFFF oznacza środek:",
+a:["proteinowy","proteinowy fluorowany","syntetyczny","fluorosyntetyczny tworzący film wodny"],
+c:3},
+
+//pyt24
+{q:"Symbol FFFP oznacza środek:",
+a:["proteinowy","proteinowy fluorowany","fluoroproteinowy tworzący film wodny","fluorosyntetyczny tworzący film wodny"],
+c:2},
+
+//pyt25
+{q:"Symbol P oznacza środek:",
+a:["proteinowy","proteinowy fluorowany","fluoroproteinowy","syntetyczny"],
+c:0},
+
+//pyt26
+{q:"Symbol S oznacza środek:",
+a:["proteinowy","proteinowy fluorowany","fluorosyntetyczny","syntetyczny"],
+c:3},
+
+//pyt27
+{q:"Metale alkaliczne należy gasić:",
+a:["pianą średnią","prądem mgłowym wody","proszkami typu D"],
+c:2},
+
+//pyt28
+{q:"Zasadniczy mechanizm gaśniczy gazów obojętnych to:",
+a:["izolowanie","chłodzenie","wypieranie i zmniejszanie stężenia tlenu"],
+c:2},
+
+//pyt29
+{q:"Do gazów gaśniczych nie zalicza się:",
+a:["dwutlenku węgla","tlenku węgla","azotu"],
+c:1},
+
+//pyt30
+{q:"Dwutlenkiem węgla można gasić:",
+a:["ciała stałe, ciecze i metale",
+"ciała stałe do 1000°C",
+"gazy i metale",
+"ciecze i gazy"],
+c:3},
+
+//pyt31
+{q:"Co to jest sorbent?:",
+a:["ciało porowate zdolne do wchłaniania ograniczonej ilości substancji",
+"substancja zobojętniająca",
+"środek powierzchniowo czynny",
+"środek zobojętniający rozlewy olejowe"],
+c:0},
+
+//pyt32
+{q:"Materiał lub substancje pochłaniający oleje nazywamy:",
+a:["sorbentem","dyspergentem","neutralizatorem"],
+c:0},
+
+//pyt33
+{q:"Do dyspergentów zaliczamy:",
+a:["toluen","olej i oleum","ropopochodne ciecze","środki powierzchniowo czynne"],
+c:3},
+
+//pyt34
+{q:"Dyspergenty mogą być stosowane do unieszkodliwiania:",
+a:["ropy naftowej","alkoholi i ługów","kwasów organicznych"],
+c:0},
+
+//pyt35
+{q:"Absorbent to substancja która:",
+a:["gromadzi na powierzchni inną substancję",
+"pochłania całą objętością inną substancję",
+"zmniejsza napięcie powierzchniowe"],
+c:1},
+
+//pyt36
+{q:"Adsorbent to substancja która:",
+a:["gromadzi na swojej powierzchni inną substancję",
+"wiąże się z absorbentem",
+"pochłania całą objętością inną substancję"],
+c:0},
+
+//pyt37
+{q:"Który z poniższych materiałów możemy zastosować jako neutralizator:",
+a:["wapno gaszone","słomę","popiół","korę drzewną"],
+c:0},
+
+//pyt38
+{q:"Dyspergent to:",
+a:["ciało porowate zdolne do wchłaniania pewnej ilości substancji zanieczyszczającej środowisko",
+"substancja posiadająca właściwości zobojętniające",
+"środek powierzchniowo czynny znajdujący zastosowanie podczas usuwania plam substancji ropopochodnych z powierzchni, głównie podczas wypadków drogowych"],
+c:2},
+
+//pyt39
+{q:"Sprzęt pożarniczy to:",
+a:["sprzęt służący do dostarczania środków gaśniczych na miejsce pożaru",
+"sprzęt służący do prowadzenia akcji ratowania ludzi i mienia",
+"przenośny lub przewoźny specjalny sprzęt służący do gaszenia pożarów, prowadzenia akcji ratowniczej oraz specjalny sprzęt ochrony stosowany przez straże pożarne podczas akcji"],
+c:2},
+
+//pyt40
+{q:"Zwyczajowe oznaczenie operacyjne samochodu ratowniczo-gaśniczego średniego to:",
+a:["GCBA","GLBAM","GBA"],
+c:2},
+
+//pyt41
+{q:"Samochód pożarniczy w świetle PN-EN 1846-1 jest to:",
+a:["samochód używany do zwalczania pożarów i/lub ratownictwa",
+"samochód i przyczepa specjalna użytkowana przez straże pożarne przystosowane do wykonywania zadań przy akcji gaśniczej lub ratowniczej",
+"dowolny pojazd użytkowany przez straże pożarne"],
+c:0},
+
+//pyt42
+{q:"Który z symboli oznacza samochód ratowniczo-gaśniczy ciężki z autopompą:",
+a:["GBA","GCBA","GCBM"],
+c:1},
+
+//pyt43
+{q:"Symbol SH-18 oznacza:",
+a:["samochód z podnośnikiem hydraulicznym o wysokości podnoszenia 18m",
+"samochód ratowniczo-gaśniczy specjalny z dźwigiem 18t",
+"samochód specjalny z drabiną i podnośnikiem hydraulicznym o wysięgu 18m"],
+c:0},
+
+//pyt44
+{q:"Hełmy stosowane w Państwowej Straży Pożarnej w Polsce powinny mieć kolor:",
+a:["biały","czerwony","żółty"],
+c:1},
+
+//pyt45
+{q:"Do ekwipunku osobistego nie zaliczamy:",
+a:["pasa strażackiego","hełmu","toporka strażackiego"],
+c:1},
+
+//pyt46
+{q:"Do ubrań ochronnych nie zaliczamy:",
+a:["ubranie specjalne",
+"ubranie chroniące przed promieniowaniem cieplnym",
+"ubranie koszarowe"],
+c:2},
+
+//pyt47
+{q:"W przypadku gdy na gaśnicy lub etykiecie widnieje wielka litera „C” oznacza to, że zmagazynowany w niej środek gaśniczy umożliwia gaszenie:",
+a:["cieczy i gazów palnych",
+"ciał stałych pochodzenia organicznego",
+"gazów palnych"],
+c:2},
+
+//pyt48
+{q:"W gaśnicy śniegowej środkiem gaśniczym jest:",
+a:["proszek","dwutlenek węgla","tlenek węgla"],
+c:1},
+
+//pyt49
+{q:"Wydajność 800 l/min to inaczej:",
+a:["1600 dm3/min","12000 l/godz.","48 m3/godz."],
+c:2},
+
+//pyt50
+{q:"Ciśnienie 25 atmosfer to:",
+a:["0,025 MPa","250m H2O","250 kPa"],
+c:1},
+
+//pyt51
+{q:"Ciśnienie 0,21 MPa to:",
+a:["210 mmH2O","2,1 at","21 bar"],
+c:1},
+
+//pyt52
+{q:"Wysokość ssania pompy pożarniczej:",
+a:["Zależy od długości linii ssawnej i nie zależy od sposobu jej ułożenia",
+"Jest ograniczona do 10,33m z powodu niedoskonałości konstrukcyjnych pomp",
+"Jest to odległość pomiędzy lustrem wody a osią nasady ssawnej pompy"],
+c:2},
+
+//pyt53
+{q:"Manowakuometr służy do pomiaru:",
+a:["wartości ciśnienia, z jakim woda opuszcza pompę",
+"wartości podciśnienia podczas poboru wody z zewnętrznego zbiornika",
+"wartości podciśnienia w przypadku gdy motopompa od strony nasady ssawnej otrzymuje wodę z innej pompy"],
+c:1},
+
+//pyt54
+{q:"Manometr w pompie wirowej mierzy:",
+a:["wartość ciśnienia wody tłoczonej przez pompę",
+"wartość podciśnienia podczas ssania przez pompę",
+"manometr nie jest to element pompy wirowej"],
+c:0},
+
+//pyt55
+{q:"Pompa próżniowa tłokowa (trokomat) to:",
+a:["sprzęt armatury wodnej",
+"urządzenie działające w gaśnicach",
+"urządzenie zasysające do pomp wirowych"],
+c:2},
+
+//pyt56
+{q:"Teoretyczna wysokość ssania wynosi 10,33 metra słupa wody (mH2O) W praktyce wielkość ta jest nie do osiągnięcia między innymi z powodu:",
+a:["strat lokalnych i liniowych w linii ssawnej",
+"niedoskonałej szczelności pompy i zbyt małej prędkości wirnika ",
+"występowania zjawiska kawitacji"],
+c:0},
+
+//pyt57
+{q:"Praktyczna wysokość ssania pomp pożarniczych wg PN wynosi:",
+a:["6,5 m","7,5 m","10,33 m"],
+c:1},
+
+//pyt58
+{q:"Dwoma motopompami pożarniczymi M16/8 przy założeniu pracy w obszarze parametrów nominalnych można napełnić zbiornik samochodu o pojemności 18 m3 w czasie ok:",
+a:["21 min","41 min","56 min"],
+c:2},
+
+//pyt59
+{q:"Symbol A 32/8 oznacza:",
+a:["autopompę o ciśnieniu nominalnym 320 m sł.w. i wydajności nominalnej 800 l/min",
+"autopompę o ciśnieniu nominalnym 32 at i wydajności nominalnej 8000 l/min",
+"autopompę o wydajności nominalnej 32 hl/min i ciśnieniu nominalnym 80 m sł.w."],
+c:2},
+
+//pyt60
+{q:"W oznaczeniu M16/8 liczba 16 oznacza:",
+a:["ciśnienie",
+"wydajność w hl/min",
+"wydajność w hl/s"],
+c:1},
+
+{q:"M 8/8 oznacza:",
+a:["8 hl/min przy 80 m H2O",
+"8 m3/h przy 80 bar",
+"8 hl/min przy 8 Pa"],
+c:0},
+
+{q:"Manometr wskazuje:",
+a:["ciśnienie i podciśnienie",
+"ciśnienie po stronie tłocznej",
+"wydajność"],
+c:1},
+
+{q:"Nasady prądownic wodnych:",
+a:["25, 52 i 75","52, 75 i 110","25 i 52"],
+c:0},
+
+{q:"Smoki ssawne PSP:",
+a:["tylko skośne",
+"proste i ukośne",
+"proste i skośne"],
+c:2},
+
+{q:"Wysysacz głębinowy działa na zasadzie pompy:",
+a:["odśrodkowej","strumieniowej","wirnikowej"],
+c:1},
+
+{q:"Wysysacz głębinowy do głębokości:",
+a:["20 m","25 m","30 m"],
+c:1},
+
+{q:"Wysysacz głębinowy posiada:",
+a:["52 wylot i 75 zasilanie",
+"75 wylot i 52 zasilanie",
+"52 i 52"],
+c:1},
+
+{q:"Wysysacz służy do:",
+a:["usunięcia powietrza z linii ssawnej",
+"zassania środka pianotwórczego",
+"wyssania wody z piwnic"],
+c:2},
+
+{q:"Do armatury wodnej zaliczamy:",
+a:["zbieracz","spinacz","gaśnicę wodno-pianową"],
+c:0},
+
+{q:"Stojak hydrantowy służy do:",
+a:["zassania wody",
+"pobrania wody z hydrantu podziemnego",
+"poboru z nadziemnego"],
+c:1},
+
+{q:"Symbol Z-2500 oznacza:",
+a:["zasysacz liniowy 2500 l/min",
+"zbiornik 2500 l",
+"zasysacz o liczbie spienienia 2500"],
+c:0},
+
+{q:"Minimalna pojemność zbiornika składanego:",
+a:["2500 l","250 l","25 hl"],
+c:0},
+
+{q:"Do piany średniej służy:",
+a:["WP 2-150","PWP 2-75","PP 2-12"],
+c:0},
+
+{q:"WP 2-75 natężenie:",
+a:["20 l/min","20 hl/min","2 hl/min"],
+c:2},
+
+{q:"PP 8-15 wydajność:",
+a:["80 l/min","8 hl/min","8 m3/min"],
+c:1},
+
+{q:"WP 4-75 wydajność pianowa:",
+a:["3000 l/min","30 hl/min","30 m3/min"],
+c:2},
+
+{q:"30000 dm3 piany w 60 s wytworzy:",
+a:["WP 2/75","WP 4/75","WP 4/150"],
+c:1},
+
+{q:"Do linii W-52 zalecany zasysacz:",
+a:["Z-2","Z-6","Z-8"],
+c:0},
+
+{q:"Pianę średnią wytwarza się przy pomocy:",
+a:["prądownic","działka","wytwornic"],
+c:2},
+
+{q:"GPL2/700W wytwarza pianę:",
+a:["1-20","21-200","powyżej 200"],
+c:2},
+
+{q:"Piana ciężka powstaje:",
+a:["w wytwornicach",
+"w generatorach",
+"w prądownicach i działkach"],
+c:2},
+
+{q:"WP 4-75 oznacza:",
+a:["400 l/min piany",
+"400 l/min roztworu i LS 75",
+"75 m3/min przy 4 bar"],
+c:1},
+
+{q:"Prądownica pianowa wytwarza pianę:",
+a:["ciężką","średnią","lekką"],
+c:0},
+
+{q:"Wydajność pianowa WP 4-75:",
+a:["15 m3/min","75 m3/min","30 m3/min"],
+c:2},
+
+{q:"Czynnikiem roboczym w GPL jest:",
+a:["woda","środek pianotwórczy","roztwór środka pianotwórczego"],
+c:2},
+
+{q:"Wytwornice wytwarzają pianę:",
+a:["lekką","średnią","ciężką"],
+c:1},
+
+{q:"Do poboru środka pianotwórczego służy:",
+a:["wysysacz","zasysacz liniowy","pompka próżniowa"],
+c:1},
+
+{q:"Zasysacz liniowy służy do:",
+a:["wytworzenia podciśnienia",
+"wyciągania wody",
+"poboru środka pianotwórczego"],
+c:2},
+
+{q:"Najmniej środka zużyje:",
+a:["WP 2/150","WP 2/75","WP 4/75"],
+c:0},
+
+{q:"Mostek przejazdowy układa się:",
+a:["na węże","pod węże","bez znaczenia"],
+c:1},
+
+{q:"Nominalny przepływ:",
+a:["W25 – 100","W75 – 800","W110 – 1200"],
+c:1},
+
+{q:"Na straty wpływa:",
+a:["wydajność pompy",
+"obroty silnika",
+"liczba i rodzaj armatury"],
+c:2},
+
+{q:"Straty ciśnienia:",
+a:["zależą od długości",
+"nie zależą od średnicy",
+"są większe w W75 niż W52"],
+c:0},
+
+{q:"Nominalne ciśnienie węży:",
+a:["8 atm","10 atm","12 atm"],
+c:0},
+
+{q:"Maksymalne ciśnienie węży:",
+a:["14 MPa","12 MPa","16 MPa"],
+c:1},
+
+{q:"Ilość wody w W-75:",
+a:["ok 88 l","ok 60 l","ok 80 l"],
+c:0},
+
+{q:"Przepływ W-52:",
+a:["100 l/min","200 l/min","400 l/min"],
+c:1},
+
+{q:"Przepływ W-75:",
+a:["800 l/min","200 l/min","1600 l/min"],
+c:0},
+
+{q:"Węże ssawne W110 długości:",
+a:["240 i 160 cm","160 i 260 cm","200 i 160 cm"],
+c:0},
+
+{q:"Co oznacza pojęcie „szybkie natarcie”?",
+a:["szybką akcję strażaków w celu ugaszenia pożaru",
+"linię gaśniczą trwale połączoną z wyznaczoną nasadą tłoczną samochodu gaśniczego gotową do natychmiastowego użycia",
+"gaszenie pożaru przy pomocy gaśnicy"],
+c:1},
+
+{q:"Inopur zalicza się do:",
+a:["podręcznego sprzętu burzącego",
+"sprzętu ratowniczego mechanicznego",
+"wyposażenia osobistego"],
+c:2},
+
+{q:"Które bosaki wymagają obsługi przez dwóch ratowników?",
+a:["tylko bosaki ciężki i sufitowy",
+"tylko bosaki sufitowy i strzechowy",
+"tylko bosaki strzechowy i ciężki"],
+c:2},
+
+{q:"Sprawianie drabiny nasadkowej z trzech przęseł wykonuje:",
+a:["dwóch strażaków i dowódca",
+"trzech strażaków",
+"dwie roty"],
+c:1},
+
+{q:"Obsługa drabiny przystawnej ciężkiej to:",
+a:["jeden strażak",
+"jedna rota",
+"zawsze czterech"],
+c:1},
+
+{q:"Kąt pochylenia drabiny przystawnej nie może być większy niż:",
+a:["50°",
+"65°",
+"75°"],
+c:2},
+
+{q:"Drabina słupkowa to drabina o symbolu:",
+a:["D-5",
+"D-3,1",
+"D-4,2"],
+c:1},
+
+{q:"Co oznacza symbol D-3,1",
+a:["drabinę hakową",
+"drabinę słupkową",
+"drabinę nasadkową"],
+c:1},
+
+{q:"Drabinę D-10W winno sprawiać:",
+a:["1 ratownik",
+"2 ratowników",
+"4 ratowników"],
+c:1},
+
+{q:"Drabiny pożarnicze wykorzystywane w jednostkach organizacyjnych PSP to:",
+a:["D12W",
+"DN 28",
+"D10W"],
+c:1},
+
+{q:"Maksymalnie z ilu przęseł sprawia się regulaminowo DN 2,73:",
+a:["czterech",
+"pięciu",
+"sześciu"],
+c:1},
+
+{q:"Strażackie linki ratownicze mają długość:",
+a:["15 m i 25 m",
+"10 m i 20 m",
+"20 m i 30 m"],
+c:0},
+
+{q:"Do urządzeń wykrywania i pomiaru temperatury stosuje się:",
+a:["piknometry punktowe, skanery liniowe i kamery termowizyjne",
+"pirometry punktowe, skanery liniowe i kamery termowizyjne",
+"pirometry punktowe, skanery termowizyjne i kamery liniowe"],
+c:1},
+
+{q:"Sprzęt ochrony dróg oddechowych dzielimy na:",
+a:["monitorujący, filtrujący",
+"monitorujący, izolujący",
+"filtrujący, izolujący"],
+c:2},
+
+{q:"Dokumentacja określająca warunki techniczne eksploatacji sprzętu ochrony układu oddechowego to:",
+a:["książka techniczno-ruchowa",
+"książka paszportowa",
+"książka kontroli sprzętu"],
+c:1},
+
+{q:"Do obliczania czasu pracy strażaka w aparacie powietrznym potrzebne są następujące dane:",
+a:["pojemność wodna butli, intensywność oddychania strażaka, ciśnienie powietrza w butli",
+"ciśnienie robocze",
+"ciśnienie próbne powietrza"],
+c:0},
+
+{q:"Wśród znaków trwałych umieszczanych na metalowej butli powietrznej wyróżnia się:",
+a:["termin wprowadzenia do jednostki",
+"waga butli bez powietrza",
+"ciśnienie próbne powietrza"],
+c:2},
+
+{q:"Ile stopni redukcji występuje w aparacie powietrznym nadciśnieniowym:",
+a:["1",
+"2",
+"3"],
+c:1},
+
+{q:"Reduktor ciśnienia w sprzęcie ochrony dróg oddechowych ma za zadanie:",
+a:["kierowanie wydychanego powietrza do maski wewnętrznej",
+"dawkowania i wytwarzania nadciśnienia w masce",
+"kierowanie wydychanego powietrza na zewnątrz"],
+c:1},
+
+{q:"Zawór dodawczy w automacie oddechowym służy do:",
+a:["zwiększenia dawki powietrza",
+"zapowietrzenia układu",
+"sprawdzenia zadziałania sygnalizatora akustycznego"],
+c:0},
+
+{q:"Sygnalizator akustyczny stosowany w sprzęcie ochrony dróg oddechowych informuje o:",
+a:["uruchomieniu rezerwy powietrza",
+"bezruchu ratownika",
+"zakończeniu rezerwy powietrza"],
+c:0},
+
+{q:"W masce do aparatu nadciśnieniowego panuje ciśnienie:",
+a:["równe ciśnieniu atmosferycznemu",
+"niższe od ciśnienia atmosferycznego",
+"wyższe od ciśnienia atmosferycznego"],
+c:2},
+
+{q:"Kontrola maski odbywa się:",
+a:["co 1 rok",
+"po każdym użyciu",
+"przynajmniej raz na dwa lata"],
+c:1},
+
+{q:"Do czyszczenia i dezynfekcji masek aparatów powietrznych należy stosować:",
+a:["alkohol etylowy",
+"alkohol metylowy",
+"środek zgodny ze wskazaniem producenta"],
+c:2},
+
+{q:"Sprawdzenie szczelności maski należy przeprowadzić:",
+a:["przed założeniem maski",
+"po założeniu maski",
+"po każdorazowym użyciu"],
+c:1},
+
+{q:"Zadaniem sprzętu izolacyjnego (dielektrycznego) jest:",
+a:["odizolowanie ratowników od urządzeń elektroenergetycznych, które znajdują się w Jednostkach Ratowniczo Gaśniczych",
+"odizolowanie ratowników od osób poszkodowanych, u których występuje krwotok zewnętrzny",
+"odizolowanie ratowników od części urządzeń elektroenergetycznych, które są lub mogą się znaleźć pod napięciem w czasie prowadzonych działań ratowniczo – gaśniczych"],
+c:2},
+
+{q:"Proporcja paliwa i oleju w silnikach dwusuwowych zależy od:",
+a:["zaleceń producenta sprzętu",
+"rodzaju oleju",
+"długości prowadnicy"],
+c:0},
+
+{q:"W ramach obsługi codziennej pilarki łańcuchowej nie wykonujemy:",
+a:["czyszczenia filtra paliwa w zbiorniku paliwa",
+"smarowania łańcucha",
+"regulacji napięcia łańcucha"],
+c:0},
+
+{q:"Podczas przenoszenia unieruchomionej pilarki prowadnica powinna być skierowana:",
+a:["do przodu",
+"do tyłu",
+"w górę"],
+c:1},
+
+{q:"Technika cięcia elementów stalowych polega na:",
+a:["utrzymaniu średnich obrotów tarczy",
+"doprowadzeniu wody do tarczy",
+"utrzymaniu maksymalnych obrotów tarczy tnącej"],
+c:2},
+
+{q:"Przy doborze tarczy ściernicowej należy uwzględnić:",
+a:["tylko kierunek obrotu",
+"maksymalną prędkość obrotową i średnicę zewnętrzną",
+"grubość tarczy i termin przydatności"],
+c:1},
+
+{q:"Piły tarczowe do cięcia stali i betonu należą do sprzętu:",
+a:["burzącego, podręcznego",
+"ratowniczego, pomocniczego",
+"burzącego, mechanicznego"],
+c:2},
+
+{q:"Przed podłączeniem reduktora do butli należy:",
+a:["poluzować śrubę nastawną reduktora",
+"odkręcić zawór iglicowy",
+"podłączyć przewód do sterownika"],
+c:0},
+
+{q:"Zestawy pneumatyczne niskociśnieniowe powinny pracować:",
+a:["niezależnie od pozycji poduszki",
+"pionowo lub pod kątem do 45°",
+"tylko w płaszczyźnie pionowej"],
+c:0},
+
+{q:"Wzmocnienia w siłownikach niskociśnieniowych zapobiegają:",
+a:["wybrzuszeniom płaszczyzny dolnej i górnej",
+"wybrzuszeniom płaszczyzn bocznych",
+"nie mają wpływu na wybrzuszenia"],
+c:1},
+
+{q:"Ustawienie dwóch siłowników niskociśnieniowych jeden na drugim jest:",
+a:["ogólnie dozwolone",
+"dozwolone w szczególnych sytuacjach",
+"zabronione"],
+c:2},
+
+{q:"Maksymalna ilość siłowników niskociśnieniowych w stosie:",
+a:["2",
+"4",
+"nie można układać w stosie"],
+c:2},
+
+{q:"Bezpośrednio do butli powietrznej podłączamy:",
+a:["urządzenie sterujące",
+"reduktor",
+"poduszki"],
+c:1},
+
+{q:"Olej hydrauliczny należy sprawdzać:",
+a:["przed każdym uruchomieniem pompy",
+"raz w roku",
+"po wymianie oleju silnikowego"],
+c:0},
+
+{q:"Po zakończeniu pracy zestawem hydraulicznym elementy robocze należy:",
+a:["sprowadzić do maksymalnego rozwarcia",
+"sprowadzić do maksymalnego zwarcia",
+"sprowadzić do niepełnego zwarcia"],
+c:2},
+
+{q:"Odciąganie kolumny kierownicy przy przegubach jest:",
+a:["dozwolone",
+"zabronione",
+"dozwolone z zachowaniem ostrożności"],
+c:1},
+
+{q:"Po użyciu rozpieracza ramiona powinny być oddalone o:",
+a:["10–15 mm",
+"100–150 mm",
+"dowolnie"],
+c:0},
+
+{q:"Po użyciu rozpieracza ramiona należy zamknąć do:",
+a:["pozycji styku",
+"maksymalnego rozwarcia",
+"rozwarcia ok. 15 mm"],
+c:2},
+
+{q:"Nożycami hydraulicznymi nie należy ciąć:",
+a:["koła kierownicy",
+"sprężyn zawieszenia",
+"poszycia drzwi"],
+c:1},
+
+{q:"Przed uruchomieniem agregatu należy:",
+a:["uziemić agregat",
+"podłączyć odbiorniki",
+"sprawdzić zabezpieczenia"],
+c:0},
+
+{q:"Oznaczenie IP dotyczy stopnia:",
+a:["zabezpieczenia przed energią elektryczną",
+"zabezpieczenia przeciwwybuchowego",
+"zabezpieczenia przed ciałami obcymi i wodą"],
+c:2},
+
+{q:"Sprzęt do stref zagrożonych wybuchem musi być klasy:",
+a:["Ex",
+"EC",
+"IP"],
+c:0},
+
+{q:"Symbol Ex oznacza:",
+a:["pracę w wysokiej temperaturze",
+"wykonanie przeciwwybuchowe",
+"brak takiego oznaczenia"],
+c:1},
+
+{q:"Pirometry służą do:",
+a:["oznaczania stężeń",
+"wykrywania substancji",
+"bezkontaktowego pomiaru temperatury"],
+c:2},
+
+{q:"Przed wpuszczeniem ratowników należy ustalić:",
+a:["kierunek wiatru",
+"ukształtowanie terenu",
+"rodzaj niebezpiecznej substancji"],
+c:2},
+
+{q:"Eksplozymetry kalibrowane są najczęściej na:",
+a:["metan",
+"etan",
+"propan-butan"],
+c:0},
+
+{q:"Przyrządy do pomiaru gazów wybuchowych to:",
+a:["spirometry",
+"manometry",
+"eksplozymetry"],
+c:2},
+
+{q:"Do pomiaru i identyfikacji substancji chemicznych stosuje się:",
+a:["kalorymetryczne rurki wskaźnikowe",
+"kolorymetryczne rurki wskaźnikowe, wielofunkcyjne mierniki gazów i analizatory",
+"kolorymetryczne rurki i dozymetry"],
+c:1},
+
+{q:"Na wyświetlaczu toksymetru stężenie pojawia się w:",
+a:["ppm",
+"DGW",
+"GGW"],
+c:0},
+
+{q:"Papierki wskaźnikowe służą do:",
+a:["określenia palności",
+"określenia pH",
+"pomiaru objętości"],
+c:1},
+
+{q:"Eksplozymetr służy do pomiaru:",
+a:["toksyczności",
+"wybuchowości",
+"energii wybuchu"],
+c:1},
+
+{q:"Przyrządy do gazów toksycznych włącza się:",
+a:["w strefie zagrożenia",
+"w strefie bezpiecznej",
+"bez ograniczeń"],
+c:1},
+
+{q:"Do wykrywania gazów palnych stosuje się:",
+a:["indykatory",
+"eksplozymetry",
+"toksynomierze"],
+c:1},
+
+{q:"Odczyn roztworu określa się za pomocą:",
+a:["indykatorów",
+"eksplozymetrów",
+"toksynomierzy"],
+c:0},
+
+{q:"Na rurkach wskaźnikowych występuje:",
+a:["skala",
+"NDSCh",
+"NDS"],
+c:0},
+
+{q:"Eksplozymetry wykrywają stężenia:",
+a:["substancji trujących",
+"gazów i par cieczy palnych",
+"odczynów PH"],
+c:1},
+
+{q:"Litera „n” na rurce oznacza:",
+a:["rurkę do azotu",
+"numer seryjny",
+"liczbę zassań"],
+c:2},
+
+{q:"Poduszki podciśnieniowe służą do:",
+a:["uszczelniania pęknięć rurociągów",
+"uszczelniania studzienek",
+"uszczelniania płaszczy cystern"],
+c:2},
+
+{q:"Pompa perystaltyczna to:",
+a:["pompa wężowa",
+"pompa śmigłowa",
+"pompa membranowa"],
+c:0},
+
+{q:"Pompa wężowa służy do:",
+a:["pompowania tylko w temp. otoczenia",
+"pompowania każdej substancji",
+"pompowania zależnie od odporności węża"],
+c:2},
+
+{q:"Węże chemiczne w oplocie stalowym stosuje się do:",
+a:["kwasów i zasad",
+"substancji ropopochodnych",
+"wszystkich substancji"],
+c:1},
+
+{q:"Do strefy 0 dopuszczona jest pompa:",
+a:["NIRO – beczkowa",
+"Mast – przelewowa",
+"Depa Elro – wężowa"],
+c:2},
+
+{q:"Zbieracz przelewowo-pompowy służy do:",
+a:["zbierania oleju z gruntu",
+"zbierania mieszaniny wodno-olejowej z wody",
+"oddzielania wody od oleju"],
+c:1},
+
+{q:"Zapora z pływaka, fartucha i balastu to:",
+a:["sztywna pomostowa",
+"sorpcyjna",
+"elastyczna płaszczowa"],
+c:2},
+
+{q:"Najskuteczniejsza przy cieczy ropopochodnej:",
+a:["pianowa",
+"proszkowa",
+"śniegowa"],
+c:0},
+
+{q:"Pilarka spalinowa posiada:",
+a:["1 filtr",
+"2 filtry",
+"3 filtry",
+"4 filtry"],
+c:2},
+
+{q:"Za bezpieczną pracę pilarką odpowiada:",
+a:["segment napinający",
+"prowadnica",
+"wychwyt łańcucha",
+"zębatka oporowa"],
+c:2},
+
+{q:"Wlot ssawny autopompy:",
+a:["110 mm",
+"75 mm",
+"52 mm",
+"150 mm"],
+c:0},
+
+{q:"Środki ochrony indywidualnej to:",
+a:["hełm, buty, ubranie specjalne, rękawice, kominiarka",
+"toporek i pas",
+"ubranie koszarowe"],
+c:0},
+
+{q:"Kamera termowizyjna znajdzie zastosowanie:",
+a:["w działaniach poszukiwawczych",
+"w ratownictwie chemicznym",
+"przy pożarach ukrytych",
+"wszystkie powyższe"],
+c:3},
+
+
+];
+
+// ======================= LOSOWANIE 30 =======================
+
+function shuffle(arr){
+return arr.sort(()=>Math.random()-0.5);
+}
+
+let exam = shuffle(base.slice(0,60)).slice(0,30);
+let current = 0;
+let answers = new Array(exam.length).fill(null);
+
+// ======================= ŁADOWANIE PYTANIA =======================
+
+function load(){
+let q = exam[current];
+document.getElementById("question").innerHTML="<h3>Pytanie "+(current+1)+" z 30</h3><p>"+q.q+"</p>";
+let ansDiv=document.getElementById("answers");
+ansDiv.innerHTML="";
+
+q.a.forEach((text,i)=>{
+let btn=document.createElement("button");
+btn.className="answer";
+btn.innerText=text;
+if(answers[current]===i) btn.classList.add("selected");
+btn.onclick=()=>{ answers[current]=i; load(); }
+ansDiv.appendChild(btn);
+});
+}
+
+function next(){ if(current<exam.length-1){current++; load();}}
+function prev(){ if(current>0){current--; load();}}
+
+// ======================= ZAKOŃCZENIE =======================
+
+function finish(){
+
+let score=0;
+let review="";
+
+exam.forEach((q,i)=>{
+let isCorrect = answers[i]===q.c;
+if(isCorrect) score++;
+
+review+=`
+<div style="margin-bottom:15px; padding:10px; background:${isCorrect?"#1e4620":"#4a1c1c"};">
+<b>Pytanie ${i+1}:</b> ${q.q}<br>
+Twoja odpowiedź: ${answers[i]!==null?q.a[answers[i]]:"Brak odpowiedzi"}<br>
+Poprawna odpowiedź: ${q.a[q.c]}<br>
+Wynik: ${isCorrect?"✅ DOBRZE":"❌ ŹLE"}
+</div>`;
+});
+
+let percent=Math.round((score/exam.length)*100);
+let passed=percent>=70?"ZALICZONE ✅":"NIEZALICZONE ❌";
+
+document.body.innerHTML=`
+<div class="container" id="summary">
+<h2>Wynik końcowy</h2>
+<h3>${score}/30 (${percent}%)</h3>
+<h2>${passed}</h2>
+<hr>
+${review}
+<button onclick="location.reload()">Zrób ponownie</button>
+</div>`;
+}
+function checkPass(){
+  if(document.getElementById("pass").value === "OSP2026"){
+    document.getElementById("login").style.display="none";
+    document.getElementById("app").style.display="block";
+    load(); // uruchamia egzamin dopiero po haśle
+  } else {
+    alert("Błędne hasło");
+  }
+}
+
+
+
+</script>
+</body>
+</html>
